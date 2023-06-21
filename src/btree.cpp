@@ -1,33 +1,258 @@
+#include <stdio.h>
+
 #include <cstdlib>
 #include <iostream>
+using namespace std;
+
+const int DEGREE = 64;
 
 class Node {
-  int *keys;
-  int order;
-  int numElements;
-  bool leaf;
-  Node **children;
-
  public:
-  Node(int order, bool leaf);
+  int *keys;
+  Node **children;
+  bool IS_LEAF;
+  int numElements;
 
-  void insert(int n);
+  Node();
+
+  friend class BTree;
 };
 
 class Btree {
-  Node *root;
-  int order;
-
  public:
-  Btree(int _order) {
-    root = NULL;
-    order = _order;
-  }
+  Node *root;
+
+  Btree();
+  void insertInternal(int, Node *, Node *);
 
   void insert(int n);
+  Node *findParent(Node *, Node *);
+
+  void printTree(Node *node);
 };
 
+Node::Node() {
+  keys = new int[DEGREE];
+  children = new Node *[DEGREE + 1];
+}
+
+Btree::Btree() { root = NULL; }
+
+void Btree::insert(int n) {
+  if (this->root == NULL) {
+    this->root = new Node;
+    this->root->keys[0] = n;
+    this->root->IS_LEAF = true;
+    this->root->numElements = 1;
+  } else {
+    Node *current = root;
+    Node *parent;
+    while (!current->IS_LEAF) {
+      parent = current;
+      for (int i = 0; i < current->numElements; i++) {
+        if (n < current->keys[i]) {
+          current = current->children[i];
+          break;
+        }
+        if (i == current->numElements - 1) {
+          current = current->children[i + 1];
+          break;
+        }
+      }
+    }
+
+    if (current->numElements < DEGREE) {
+      int i = 0;
+      while (n > current->keys[i] && i < current->numElements) {
+        i++;
+      }
+
+      for (int j = current->numElements; j > i; j--) {
+        current->keys[j] = current->keys[j - 1];
+      }
+
+      current->keys[i] = n;
+      current->numElements++;
+      current->children[current->numElements] =
+          current->children[current->numElements - 1];
+      current->children[current->numElements - 1] = NULL;
+    } else {
+      Node *newLeaf = new Node;
+      int tempNode[DEGREE + 1];
+
+      for (int i = 0; i < DEGREE; i++) {
+        tempNode[i] = current->keys[i];
+      }
+
+      int i = 0;
+      while (n > tempNode[i] && i < DEGREE) {
+        i++;
+      }
+
+      for (int j = DEGREE + 1; j > i; j--) {
+        tempNode[j] = tempNode[j - 1];
+      }
+
+      tempNode[i] = n;
+      newLeaf->IS_LEAF = true;
+
+      current->numElements = (DEGREE + 1) / 2;
+      newLeaf->numElements = DEGREE + 1 - (DEGREE + 1) / 2;
+      current->children[current->numElements] = newLeaf;
+      newLeaf->children[newLeaf->numElements] = current->children[DEGREE];
+      current->children[DEGREE] = NULL;
+
+      for (i = 0; i < current->numElements; i++) {
+        current->keys[i] = tempNode[i];
+      }
+
+      int j;
+      for (i = 0, j = current->numElements; i < newLeaf->numElements;
+           i++, j++) {
+        newLeaf->keys[i] = tempNode[j];
+      }
+
+      if (current == root) {
+        Node *newRoot = new Node;
+        newRoot->keys[0] = newLeaf->keys[0];
+        newRoot->children[0] = current;
+        newRoot->children[1] = newLeaf;
+        newRoot->IS_LEAF = false;
+        newRoot->numElements = 1;
+        root = newRoot;
+      } else {
+        insertInternal(newLeaf->keys[0], parent, newLeaf);
+      }
+    }
+  }
+}
+
+void Btree::insertInternal(int n, Node *current, Node *child) {
+  if (current->numElements < DEGREE) {
+    int i = 0;
+    while (n > current->keys[i] && i < current->numElements) {
+      i++;
+    }
+
+    for (int j = current->numElements; j > i; j--) {
+      current->keys[j] = current->keys[j - 1];
+    }
+
+    for (int j = current->numElements + 1; j > i; j--) {
+      current->children[j] = current->children[j - 1];
+    }
+
+    current->keys[i] = n;
+    current->numElements++;
+    current->children[i + 1] = child;
+  } else {
+    Node *newInternal = new Node;
+    int tempKeys[DEGREE + 1];
+    Node *tempChildren[DEGREE + 2];
+
+    for (int i = 0; i < DEGREE; i++) {
+      tempKeys[i] = current->keys[i];
+    }
+
+    for (int i = 0; i < DEGREE + 1; i++) {
+      tempChildren[i] = current->children[i];
+    }
+
+    int i = 0;
+    while (n > tempKeys[i] && i < DEGREE) {
+      i++;
+    }
+
+    for (int j = DEGREE + 1; j > i; j--) {
+      tempKeys[j] = tempKeys[j - 1];
+    }
+    tempKeys[i] = n;
+
+    for (int j = DEGREE + 2; j > i + 1; j--) {
+      tempChildren[j] = tempChildren[j - 1];
+    }
+
+    tempChildren[i + 1] = child;
+    newInternal->IS_LEAF = false;
+    current->numElements = (DEGREE + 1) / 2;
+    newInternal->numElements = DEGREE - (DEGREE + 1) / 2;
+
+    int j;
+    for (i = 0, j = current->numElements + 1; i < newInternal->numElements;
+         i++, j++) {
+      newInternal->keys[i] = tempKeys[j];
+    }
+    for (i = 0, j = current->numElements + 1; i < newInternal->numElements + 1;
+         i++, j++) {
+      newInternal->children[i] = tempChildren[j];
+    }
+    if (current == root) {
+      Node *newRoot = new Node;
+      newRoot->keys[0] = current->keys[current->numElements];
+      newRoot->children[0] = current;
+      newRoot->children[1] = newInternal;
+      newRoot->IS_LEAF = false;
+      newRoot->numElements = 1;
+      root = newRoot;
+    } else {
+      insertInternal(current->keys[current->numElements],
+                     findParent(root, current), newInternal);
+    }
+  }
+}
+
+Node *Btree::findParent(Node *current, Node *child) {
+  Node *parent;
+  if (current->IS_LEAF || (current->children[0])->IS_LEAF) {
+    return NULL;
+  }
+  for (int i = 0; i < current->numElements + 1; i++) {
+    if (current->children[i] == child) {
+      parent = current;
+      return parent;
+    } else {
+      parent = findParent(current->children[i], child);
+      if (parent != NULL) return parent;
+    }
+  }
+  return parent;
+}
+
+void Btree::printTree(Node *node) {
+  if (node != NULL) {
+    for (int i = 0; i < node->numElements; i++) {
+      cout << node->keys[i] << " ";
+    }
+    cout << "\n";
+    if (node->IS_LEAF != true) {
+      for (int i = 0; i < node->numElements + 1; i++) {
+        printTree(node->children[i]);
+      }
+    }
+  }
+}
+
 int main() {
-  // Insert some elements here
+  srand(time(NULL));
+
+  Btree *tree = new Btree;
+
+  for (int i = 0; i < 10000; i++) {
+    int x = rand();
+    // cout << x << "\n";
+    tree->insert(x);
+  }
+  // tree->insert(1);
+  // tree->insert(3);
+  // tree->insert(5);
+  // tree->insert(7);
+  // tree->insert(9);
+  // tree->insert(2);
+  // tree->insert(4);
+  // tree->insert(6);
+  // tree->insert(8);
+  // tree->insert(10);
+
+  tree->printTree(tree->root);
   return EXIT_SUCCESS;
 }
