@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 using namespace std;
 
 const int DEGREE = 64;
@@ -27,6 +28,7 @@ class Btree {
 
   void insert(int n);
   Node *findParent(Node *, Node *);
+  int search(int value);
 
   void printTree(Node *node);
 };
@@ -232,27 +234,42 @@ void Btree::printTree(Node *node) {
   }
 }
 
+Node *leaf_search(int val, Node *node) {
+  if (node->IS_LEAF) {
+    return node;
+  }
+  // TODO: Make binary search
+  for (int i = 0; i < node->numElements - 2; i++) {
+    if (val <= node->keys[i]) {
+      return leaf_search(val, node->children[i]);
+    }
+  }
+  return leaf_search(val, node->children[node->numElements - 1]);
+}
+
+int Btree::search(int val) {
+  Node *leaf = leaf_search(val, root);
+  // More efficient search here?
+  for (int i = 0; i < leaf->numElements - 1; i++) {
+    if (val == leaf->keys[i]) {
+      return leaf->keys[i];
+    }
+  }
+  return -1;  // TODO: make proper error or something else. Options?
+}
+
 int main() {
   srand(time(NULL));
 
   Btree *tree = new Btree;
 
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < 100000; i++) {
     int x = rand();
     // cout << x << "\n";
     tree->insert(x);
   }
-  // tree->insert(1);
-  // tree->insert(3);
-  // tree->insert(5);
-  // tree->insert(7);
-  // tree->insert(9);
-  // tree->insert(2);
-  // tree->insert(4);
-  // tree->insert(6);
-  // tree->insert(8);
-  // tree->insert(10);
+  tree->insert(125689);
 
-  tree->printTree(tree->root);
+  cout << "Got: " << tree->search(125689);
   return EXIT_SUCCESS;
 }
