@@ -210,7 +210,7 @@ Node *leaf_search(int val, Node *node) {
 int Btree::search(int val) {
   Node *leaf = leaf_search(val, root);
   // More efficient search here?
-  for (int i = 0; i < leaf->numElements - 1; i++) {
+  for (int i = 0; i <= leaf->numElements - 1; i++) {
     if (val == leaf->keys[i]) {
       return leaf->keys[i];
     }
@@ -218,18 +218,18 @@ int Btree::search(int val) {
   return -1;  // TODO: make proper error or something else. Options?
 }
 
-int main() {
-  srand(time(NULL));
+// int tree_main() {
+//   srand(time(NULL));
 
-  Btree *tree = new Btree;
+//   Btree *tree = new Btree;
 
-  for (int i = 0; i < 100000; i++) {
-    int x = rand();
-    // cout << x << "\n";
-    tree->insert(x);
-  }
-  tree->insert(12);
+//   for (int i = 0; i < 100000; i++) {
+//     int x = rand();
+//     // cout << x << "\n";
+//     tree->insert(x);
+//   }
+//   tree->insert(12);
 
-  cout << "Got: " << tree->search(12);
-  return EXIT_SUCCESS;
-}
+//   cout << "Got: " << tree->search(12);
+//   return EXIT_SUCCESS;
+// }
