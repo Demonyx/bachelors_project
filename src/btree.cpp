@@ -1,44 +1,4 @@
-#include <stdio.h>
-
-#include <cstdlib>
-#include <iostream>
-#include <optional>
-using namespace std;
-
-const int DEGREE = 64;
-
-class Node {
- public:
-  int *keys;
-  Node **children;
-  bool IS_LEAF;
-  int numElements;
-
-  Node();
-
-  friend class BTree;
-};
-
-class Btree {
- public:
-  Node *root;
-
-  Btree();
-  void insertInternal(int, Node *, Node *);
-
-  void insert(int n);
-  Node *findParent(Node *, Node *);
-  int search(int value);
-
-  void printTree(Node *node);
-};
-
-Node::Node() {
-  keys = new int[DEGREE];
-  children = new Node *[DEGREE + 1];
-}
-
-Btree::Btree() { root = NULL; }
+#include "../include/btree.h"
 
 void Btree::insert(int n) {
   if (this->root == NULL) {
@@ -268,8 +228,8 @@ int main() {
     // cout << x << "\n";
     tree->insert(x);
   }
-  tree->insert(125689);
+  tree->insert(12);
 
-  cout << "Got: " << tree->search(125689);
+  cout << "Got: " << tree->search(12);
   return EXIT_SUCCESS;
 }

@@ -9,3 +9,14 @@ GTEST_TEST(Btree, InsertionOne) {
 
   ASSERT_EQ(result, 12);
 }
+
+GTEST_TEST(Btree, Insert100Forwards) {
+  Btree *tree = new Btree;
+  for (int i = 1; i <= 100; i++) {
+    tree->insert(i);
+  }
+
+  for (int i = 1; i <= 100; i++) {
+    ASSERT_EQ(tree->search(i), i);
+  }
+}
