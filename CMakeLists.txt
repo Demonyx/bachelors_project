@@ -34,12 +34,12 @@ add_executable(
 
 target_link_libraries(
   btree_test
-  btree
   GTest::gtest_main
 )
 
 target_link_libraries(
   btree_test
+  btree
   GTest::gtest_main
 )
 
