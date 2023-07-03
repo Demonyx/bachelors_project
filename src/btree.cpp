@@ -199,12 +199,12 @@ Node *leaf_search(int val, Node *node) {
     return node;
   }
   // TODO: Make binary search
-  for (int i = 0; i < node->numElements - 2; i++) {
-    if (val <= node->keys[i]) {
+  for (int i = 0; i <= node->numElements - 1; i++) {
+    if (val < node->keys[i]) {
       return leaf_search(val, node->children[i]);
     }
   }
-  return leaf_search(val, node->children[node->numElements - 1]);
+  return leaf_search(val, node->children[node->numElements]);
 }
 
 int Btree::search(int val) {
