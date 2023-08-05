@@ -33,6 +33,8 @@ class Btree {
   void insert(int n);
   Node *findParent(Node *, Node *);
   int search(int value);
+  void remove(int value);
+  void removeInternal(int value, Node *current, Node *child);
 
   void printTree(Node *node);
 };

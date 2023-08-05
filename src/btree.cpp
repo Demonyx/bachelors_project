@@ -218,6 +218,224 @@ int Btree::search(int val) {
   return -1;  // TODO: make proper error or something else. Options?
 }
 
+void Btree::remove(int val) {
+  if (root == NULL) {
+    // TODO: figure out error
+  } else {
+    Node *current = root;
+    Node *parent;
+
+    int left, right;
+    while (!current->IS_LEAF) {
+      for (int i = 0; i < current->numElements; i++) {
+        parent = current;
+        left = i - 1;
+        right = i + 1;
+        if (val < current->keys[i]) {
+          current = current->children[i];
+          break;
+        }
+        if (i == current->numElements - 1) {
+          left = i;
+          right = i + 2;
+          current = current->children[i + 1];
+          break;
+        }
+      }
+    }
+    bool found = false;
+    int pos;
+    for (pos = 0; pos < current->numElements; pos++) {
+      if (current->keys[pos] == val) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      // TODO: sensible error or something
+      return;
+    }
+
+    for (int i = pos; i < current->numElements; i++) {
+      current->keys[i] = current->keys[i + 1];
+    }
+    current->numElements--;
+
+    if (current == root) {
+      for (int i = 0; i < DEGREE - 1; i++) {
+        current->children[i] = NULL;
+      }
+
+      if (current->numElements == 0) {
+        // TODO: Cleanup. Should the tree be deleted?
+      }
+      return;
+    }
+
+    current->children[current->numElements] =
+        current->children[current->numElements + 1];
+    current->children[current->numElements + 1] = NULL;
+
+    if (current->numElements >= (DEGREE + 1) / 2) {
+      // We still satisfy the fullness requirement
+      return;
+    }
+    // The fullness requirement is not satisfied, we have to shuffle nodes
+    if (left >= 0) {
+      Node *leftNode = parent->children[left];
+      if (leftNode->numElements >= (DEGREE + 1) / 2 + 1) {
+        // Make space for new key
+        for (int i = current->numElements; i > 0; i--) {
+          current->keys[i] = current->keys[i - 1];
+        }
+        current->numElements++;
+        current->children[current->numElements] =
+            current->children[current->numElements - 1];
+        current->children[current->numElements - 1] = NULL;
+
+        current->keys[0] = leftNode->keys[leftNode->numElements - 1];
+        leftNode->numElements--;
+        leftNode->children[leftNode->numElements] = current;
+        leftNode->children[leftNode->numElements + 1] = NULL;
+        parent->keys[left] = current->keys[0];
+        return;
+      }
+    }
+
+    if (right <= parent->numElements) {
+      Node *rightNode = parent->children[right];
+      if (rightNode->numElements >= (DEGREE + 1) / 2 + 1) {
+        current->numElements++;
+        current->children[current->numElements] =
+            current->children[current->numElements - 1];
+        current->children[current->numElements - 1] =
+            NULL;  // Maybe unnecessary
+        current->keys[current->numElements - 1] = rightNode->keys[0];
+
+        rightNode->numElements--;
+        rightNode->children[rightNode->numElements] =
+            rightNode->children[rightNode->numElements + 1];
+        rightNode->children[rightNode->numElements + 1] = NULL;
+        for (int i = 0; i < rightNode->numElements; i++) {
+          rightNode->keys[i] = rightNode->keys[i + 1];
+        }
+
+        parent->keys[right - 1] = rightNode->keys[0];
+        return;
+      }
+    }
+
+    if (left >= 0) {  // TODO: this needs better structure
+                      // We want to merge two nodes
+      Node *leftNode = parent->children[left];
+      for (int i = leftNode->numElements, j = 0; j < current->numElements;
+           i++, j++) {
+        leftNode->keys[i] = current->keys[j];
+      }
+      leftNode->children[leftNode->numElements] = NULL;
+      leftNode->numElements += current->numElements;
+      leftNode->children[leftNode->numElements] =
+          current->children[current->numElements];
+      // TODO: remove internal
+      delete[] current->keys;
+      delete[] current->children;
+      delete current;
+
+    } else if (right <= parent->numElements) {
+      Node *rightNode = parent->children[right];
+      for (int i = current->numElements, j = 0; j < rightNode->numElements;
+           i++, j++) {
+        current->keys[i] = rightNode->keys[j];
+      }
+      current->children[current->numElements] = NULL;
+      current->numElements += rightNode->numElements;
+      current->children[current->numElements] =
+          rightNode->children[rightNode->numElements];
+      // TODO remove internaln
+      delete[] rightNode->keys;
+      delete[] rightNode->children;
+      delete rightNode;
+    }
+  }
+}
+
+void Btree::removeInternal(int val, Node *current, Node *child) {
+  // We need to remove internal nodes seperately since they have different
+  // fullness requirements to leaf nodes
+  if (current == root) {
+    if (current->numElements == 1) {
+      if (current->children[1] == child) {
+        // change root node to left child
+        delete[] child->keys;
+        delete[] child->children;
+        delete child;
+
+        root = current->children[0];
+        delete[] current->keys;
+        delete[] current->children;
+        delete current;
+        return;
+
+      } else if (current->children[0] == child) {
+        // change root to right child
+        delete[] child->keys;
+        delete[] child->children;
+        delete child;
+
+        root = current->children[1];
+        delete[] current->keys;
+        delete[] current->children;
+        delete current;
+        return;
+      }
+    }
+  }
+
+  int pos;
+  for (pos = 0; pos < current->numElements; pos++) {
+    if (current->keys[pos] == val) {
+      break;
+    }
+  }
+
+  for (int i = pos; i < current->numElements; i++) {
+    current->keys[i] = current->keys[i + 1];
+  }
+
+  for (pos = 0; pos < current->numElements; pos++) {
+    if (current->children[pos] == child) {
+      break;
+    }
+  }
+
+  for (int i = pos; i < current->numElements + 1; i++) {
+    current->children[i] = current->children[i + 1];
+  }
+
+  current->numElements--;
+
+  if (current->numElements >= (DEGREE + 1) / 2 - 1) {
+    // We meet the fullness criteria
+    return;
+  }
+
+  if (current == root) {
+    return;
+  }
+
+  Node *parent = findParent(root, current);
+  int left, right;
+
+  for (pos = 0; pos < parent->numElements + 1; pos++) {
+    if (parent->children[pos] == current) {
+      left = pos - 1;
+      right = pos + 1;
+      break;
+    }
+  }
+}
+
 // int tree_main() {
 //   srand(time(NULL));
 
