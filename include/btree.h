@@ -36,12 +36,15 @@ class Btree {
   void remove(int value);
   void removeInternal(int value, Node *current, Node *child);
 
+  int getSize(Node *node);
+
   void printTree(Node *node);
 };
 
 inline Node::Node() {
   keys = new int[DEGREE];
   children = new Node *[DEGREE + 1];
+  numElements = 0;
 }
 
 inline Btree::Btree() { root = NULL; }

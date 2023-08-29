@@ -20,3 +20,42 @@ GTEST_TEST(Btree, Insert100Forwards) {
     ASSERT_EQ(tree->search(i), i);
   }
 }
+
+GTEST_TEST(Btree, CheckSize) {
+  Btree *tree = new Btree;
+  for (int i = 1; i <= 10; i++) {
+    tree->insert(i);
+  }
+  int result = tree->getSize(tree->root);
+
+  ASSERT_EQ(result, 10);
+}
+
+GTEST_TEST(Btree, CheckSize0) {
+  Btree *tree = new Btree;
+  int result = tree->getSize(tree->root);
+
+  ASSERT_EQ(result, 0);
+}
+
+GTEST_TEST(Btree, Insert10Remove1) {
+  Btree *tree = new Btree;
+  for (int i = 1; i <= 10; i++) {
+    tree->insert(i);
+  }
+
+  tree->remove(5);
+
+  ASSERT_NE(tree->search(5), 5);
+}
+
+GTEST_TEST(Btree, Insert10Remove10) {
+  Btree *tree = new Btree;
+  for (int i = 1; i <= 10; i++) {
+    tree->insert(i);
+  }
+
+  for (int i = 1; i <= 10; i++) {
+    tree->remove(i);
+  }
+}

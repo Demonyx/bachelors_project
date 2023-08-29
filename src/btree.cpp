@@ -180,19 +180,6 @@ Node *Btree::findParent(Node *current, Node *child) {
   return parent;
 }
 
-void Btree::printTree(Node *node) {
-  if (node != NULL) {
-    for (int i = 0; i < node->numElements; i++) {
-      cout << node->keys[i] << " ";
-    }
-    cout << "\n";
-    if (node->IS_LEAF != true) {
-      for (int i = 0; i < node->numElements + 1; i++) {
-        printTree(node->children[i]);
-      }
-    }
-  }
-}
 
 Node *leaf_search(int val, Node *node) {
   if (node->IS_LEAF) {
@@ -432,6 +419,108 @@ void Btree::removeInternal(int val, Node *current, Node *child) {
       left = pos - 1;
       right = pos + 1;
       break;
+    }
+  }
+
+  if (left >= 0) {
+    Node *leftNode = parent->children[left];
+    if (leftNode->numElements >= DEGREE + 1 / 2) {
+      for (int i = current->numElements; i > 0; i--) {
+        current->keys[i] = current->keys[i - 1];
+      }
+
+      current->keys[0] = parent->keys[left];
+      parent->keys[left] = leftNode->keys[leftNode->numElements - 1];
+      for (int i = current->numElements + 1; i > 0; i--) {
+        current->children[i] = current->children[i - 1];
+      }
+
+      current->children[0] = leftNode->children[leftNode->numElements];
+      current->numElements++;
+      leftNode->numElements--;
+      return;
+    }
+  }
+
+  if (right <= parent->numElements) {
+    Node *rightNode = parent->children[right];
+    if (rightNode->numElements >= DEGREE + 1 / 2) {
+      current->keys[current->numElements] = parent->keys[pos];
+      parent->keys[pos] = rightNode->keys[0];
+
+      for (int i = 0; i < rightNode->numElements; i++) {
+        rightNode->keys[i] = rightNode->keys[i + 1];
+      }
+
+      current->children[current->numElements + 1] = rightNode->children[0];
+      for (int i = 0; i < rightNode->numElements; ++i) {
+        rightNode->children[i] = rightNode->children[i + 1];
+      }
+
+      current->numElements++;
+      rightNode->numElements--;
+      return;
+    }
+  }
+
+  if (left >= 0) {
+    Node *leftNode = parent->children[left];
+    leftNode->keys[leftNode->numElements] = parent->keys[left];
+
+    for (int i = leftNode->numElements + 1, j = 0; j < current->numElements; j++) {
+      leftNode->keys[i] = current->keys[j];
+    }
+    for (int i = leftNode->numElements + 1, j = 0; j < current->numElements; j++) {
+      leftNode->children[i] = current->children[j];
+      current->children[j] = NULL;
+    }
+
+    leftNode->numElements = current->numElements + 1;
+    current->numElements = 0;
+    removeInternal(parent->keys[left], parent, current);
+  } else if (right <= parent->numElements) {
+    Node *rightNode = parent->children[right];
+    current->keys[current->numElements] = parent->keys[right - 1];
+
+    for (int i = current->numElements + 1, j = 0; j < rightNode->numElements; j++) {
+      current->keys[i] = rightNode->keys[j];
+    }
+    for (int i = current->numElements + 1, j = 0; j < rightNode->numElements + 1; j++) {
+      current->children[i] = rightNode->children[j];
+      rightNode->children[j] = NULL;
+    }
+
+    current->numElements = rightNode->numElements + 1;
+    rightNode->numElements = 0;
+    removeInternal(parent->keys[right - 1], parent, rightNode);
+  }
+}
+
+int Btree::getSize(Node *node) {
+  int size = 0;
+  if (node == NULL || node->numElements == 0) {
+    return size;
+  } else if (node->IS_LEAF) {
+    return size + node->numElements;
+  } else {
+    for (int i = 0; i < node->numElements; i++) {
+      size += getSize(node->children[i]);
+    }
+    return size;
+  }
+}
+
+
+void Btree::printTree(Node *node) {
+  if (node != NULL) {
+    for (int i = 0; i < node->numElements; i++) {
+      cout << node->keys[i] << " ";
+    }
+    cout << "\n";
+    if (node->IS_LEAF != true) {
+      for (int i = 0; i < node->numElements + 1; i++) {
+        printTree(node->children[i]);
+      }
     }
   }
 }
