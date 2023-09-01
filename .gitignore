@@ -1,1 +1,12 @@
 build/*
+CMakeCache.txt
+CMakeFiles/*
+CTestTestfile.cmake
+Makefile
+Testing/*
+_deps/*
+btree_test
+cmake_install.cmake
+install_manifest.txt
+lib/*
+libbtree.a
