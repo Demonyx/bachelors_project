@@ -1,4 +1,5 @@
 #include "../include/btree.h"
+#include "../include/io.h"
 
 void Btree::insert(int n) {
   if (this->root == NULL) {

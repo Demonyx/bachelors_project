@@ -5,6 +5,9 @@ set (CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set (CMAKE_CXX_EXTENSIONS TRUE)
 set (CMAKE_BUILD_TYPE Debug)
 
+set(CXXFLAGS  "-luring")
+set(CMAKE_CXX_FLAGS "${CXXFLAGS}")
+
 # find_package(GTest CONFIG REQUIRED)
 
 include(FetchContent)
@@ -21,15 +24,22 @@ project(btree)
 
 set(SOURCES
     src/btree.cpp
+    src/io.cpp
 )
 
 add_library(btree src/btree.cpp)
+# add_library(io src/io.cpp)
 
 enable_testing()
 
 add_executable(
   btree_test
   tests/btree_test.cpp
+)
+
+add_executable(
+  io
+  src/io.cpp
 )
 
 target_link_libraries(
