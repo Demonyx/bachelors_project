@@ -44,7 +44,7 @@ class Btree {
 inline Node::Node() {
   keys = new int[DEGREE];
   children = new Node *[DEGREE + 1];
-  numElements = 0;
+  size = 0;
 }
 
 inline Btree::Btree() { root = NULL; }
