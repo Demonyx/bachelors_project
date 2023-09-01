@@ -16,7 +16,7 @@ class Node {
   int *keys;
   Node **children;
   bool IS_LEAF;
-  int numElements;
+  int size;
 
   Node();
 

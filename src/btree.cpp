@@ -5,39 +5,41 @@ void Btree::insert(int n) {
     this->root = new Node;
     this->root->keys[0] = n;
     this->root->IS_LEAF = true;
-    this->root->numElements = 1;
+    this->root->size = 1;
+    // write to disk
+    
   } else {
     Node *current = root;
     Node *parent;
     while (!current->IS_LEAF) {
       parent = current;
-      for (int i = 0; i < current->numElements; i++) {
+      for (int i = 0; i < current->size; i++) {
         if (n < current->keys[i]) {
           current = current->children[i];
           break;
         }
-        if (i == current->numElements - 1) {
+        if (i == current->size - 1) {
           current = current->children[i + 1];
           break;
         }
       }
     }
 
-    if (current->numElements < DEGREE) {
+    if (current->size < DEGREE) {
       int i = 0;
-      while (n > current->keys[i] && i < current->numElements) {
+      while (n > current->keys[i] && i < current->size) {
         i++;
       }
 
-      for (int j = current->numElements; j > i; j--) {
+      for (int j = current->size; j > i; j--) {
         current->keys[j] = current->keys[j - 1];
       }
 
       current->keys[i] = n;
-      current->numElements++;
-      current->children[current->numElements] =
-          current->children[current->numElements - 1];
-      current->children[current->numElements - 1] = NULL;
+      current->size++;
+      current->children[current->size] =
+          current->children[current->size - 1];
+      current->children[current->size - 1] = NULL;
     } else {
       Node *newLeaf = new Node;
       int tempNode[DEGREE + 1];
@@ -58,18 +60,18 @@ void Btree::insert(int n) {
       tempNode[i] = n;
       newLeaf->IS_LEAF = true;
 
-      current->numElements = (DEGREE + 1) / 2;
-      newLeaf->numElements = DEGREE + 1 - (DEGREE + 1) / 2;
-      current->children[current->numElements] = newLeaf;
-      newLeaf->children[newLeaf->numElements] = current->children[DEGREE];
+      current->size = (DEGREE + 1) / 2;
+      newLeaf->size = DEGREE + 1 - (DEGREE + 1) / 2;
+      current->children[current->size] = newLeaf;
+      newLeaf->children[newLeaf->size] = current->children[DEGREE];
       current->children[DEGREE] = NULL;
 
-      for (i = 0; i < current->numElements; i++) {
+      for (i = 0; i < current->size; i++) {
         current->keys[i] = tempNode[i];
       }
 
       int j;
-      for (i = 0, j = current->numElements; i < newLeaf->numElements;
+      for (i = 0, j = current->size; i < newLeaf->size;
            i++, j++) {
         newLeaf->keys[i] = tempNode[j];
       }
@@ -80,7 +82,7 @@ void Btree::insert(int n) {
         newRoot->children[0] = current;
         newRoot->children[1] = newLeaf;
         newRoot->IS_LEAF = false;
-        newRoot->numElements = 1;
+        newRoot->size = 1;
         root = newRoot;
       } else {
         insertInternal(newLeaf->keys[0], parent, newLeaf);
@@ -90,22 +92,22 @@ void Btree::insert(int n) {
 }
 
 void Btree::insertInternal(int n, Node *current, Node *child) {
-  if (current->numElements < DEGREE) {
+  if (current->size < DEGREE) {
     int i = 0;
-    while (n > current->keys[i] && i < current->numElements) {
+    while (n > current->keys[i] && i < current->size) {
       i++;
     }
 
-    for (int j = current->numElements; j > i; j--) {
+    for (int j = current->size; j > i; j--) {
       current->keys[j] = current->keys[j - 1];
     }
 
-    for (int j = current->numElements + 1; j > i; j--) {
+    for (int j = current->size + 1; j > i; j--) {
       current->children[j] = current->children[j - 1];
     }
 
     current->keys[i] = n;
-    current->numElements++;
+    current->size++;
     current->children[i + 1] = child;
   } else {
     Node *newInternal = new Node;
@@ -136,28 +138,28 @@ void Btree::insertInternal(int n, Node *current, Node *child) {
 
     tempChildren[i + 1] = child;
     newInternal->IS_LEAF = false;
-    current->numElements = (DEGREE + 1) / 2;
-    newInternal->numElements = DEGREE - (DEGREE + 1) / 2;
+    current->size = (DEGREE + 1) / 2;
+    newInternal->size = DEGREE - (DEGREE + 1) / 2;
 
     int j;
-    for (i = 0, j = current->numElements + 1; i < newInternal->numElements;
+    for (i = 0, j = current->size + 1; i < newInternal->size;
          i++, j++) {
       newInternal->keys[i] = tempKeys[j];
     }
-    for (i = 0, j = current->numElements + 1; i < newInternal->numElements + 1;
+    for (i = 0, j = current->size + 1; i < newInternal->size + 1;
          i++, j++) {
       newInternal->children[i] = tempChildren[j];
     }
     if (current == root) {
       Node *newRoot = new Node;
-      newRoot->keys[0] = current->keys[current->numElements];
+      newRoot->keys[0] = current->keys[current->size];
       newRoot->children[0] = current;
       newRoot->children[1] = newInternal;
       newRoot->IS_LEAF = false;
-      newRoot->numElements = 1;
+      newRoot->size = 1;
       root = newRoot;
     } else {
-      insertInternal(current->keys[current->numElements],
+      insertInternal(current->keys[current->size],
                      findParent(root, current), newInternal);
     }
   }
@@ -168,7 +170,7 @@ Node *Btree::findParent(Node *current, Node *child) {
   if (current->IS_LEAF || (current->children[0])->IS_LEAF) {
     return NULL;
   }
-  for (int i = 0; i < current->numElements + 1; i++) {
+  for (int i = 0; i < current->size + 1; i++) {
     if (current->children[i] == child) {
       parent = current;
       return parent;
@@ -181,23 +183,23 @@ Node *Btree::findParent(Node *current, Node *child) {
 }
 
 
-Node *leaf_search(int val, Node *node) {
+Node *leafSearch(int val, Node *node) {
   if (node->IS_LEAF) {
     return node;
   }
   // TODO: Make binary search
-  for (int i = 0; i <= node->numElements - 1; i++) {
+  for (int i = 0; i <= node->size - 1; i++) {
     if (val < node->keys[i]) {
-      return leaf_search(val, node->children[i]);
+      return leafSearch(val, node->children[i]);
     }
   }
-  return leaf_search(val, node->children[node->numElements]);
+  return leafSearch(val, node->children[node->size]);
 }
 
 int Btree::search(int val) {
-  Node *leaf = leaf_search(val, root);
+  Node *leaf = leafSearch(val, root);
   // More efficient search here?
-  for (int i = 0; i <= leaf->numElements - 1; i++) {
+  for (int i = 0; i <= leaf->size - 1; i++) {
     if (val == leaf->keys[i]) {
       return leaf->keys[i];
     }
@@ -214,7 +216,7 @@ void Btree::remove(int val) {
 
     int left, right;
     while (!current->IS_LEAF) {
-      for (int i = 0; i < current->numElements; i++) {
+      for (int i = 0; i < current->size; i++) {
         parent = current;
         left = i - 1;
         right = i + 1;
@@ -222,7 +224,7 @@ void Btree::remove(int val) {
           current = current->children[i];
           break;
         }
-        if (i == current->numElements - 1) {
+        if (i == current->size - 1) {
           left = i;
           right = i + 2;
           current = current->children[i + 1];
@@ -232,7 +234,7 @@ void Btree::remove(int val) {
     }
     bool found = false;
     int pos;
-    for (pos = 0; pos < current->numElements; pos++) {
+    for (pos = 0; pos < current->size; pos++) {
       if (current->keys[pos] == val) {
         found = true;
         break;
@@ -244,67 +246,67 @@ void Btree::remove(int val) {
       return;
     }
 
-    for (int i = pos; i < current->numElements; i++) {
+    for (int i = pos; i < current->size; i++) {
       current->keys[i] = current->keys[i + 1];
     }
-    current->numElements--;
+    current->size--;
 
     if (current == root) {
       for (int i = 0; i < DEGREE - 1; i++) {
         current->children[i] = NULL;
       }
 
-      if (current->numElements == 0) {
+      if (current->size == 0) {
         // TODO: Cleanup. Should the tree be deleted?
       }
       return;
     }
 
-    current->children[current->numElements] =
-        current->children[current->numElements + 1];
-    current->children[current->numElements + 1] = NULL;
+    current->children[current->size] =
+        current->children[current->size + 1];
+    current->children[current->size + 1] = NULL;
 
-    if (current->numElements >= (DEGREE + 1) / 2) {
+    if (current->size >= (DEGREE + 1) / 2) {
       // We still satisfy the fullness requirement
       return;
     }
     // The fullness requirement is not satisfied, we have to shuffle nodes
     if (left >= 0) {
       Node *leftNode = parent->children[left];
-      if (leftNode->numElements >= (DEGREE + 1) / 2 + 1) {
+      if (leftNode->size >= (DEGREE + 1) / 2 + 1) {
         // Make space for new key
-        for (int i = current->numElements; i > 0; i--) {
+        for (int i = current->size; i > 0; i--) {
           current->keys[i] = current->keys[i - 1];
         }
-        current->numElements++;
-        current->children[current->numElements] =
-            current->children[current->numElements - 1];
-        current->children[current->numElements - 1] = NULL;
+        current->size++;
+        current->children[current->size] =
+            current->children[current->size - 1];
+        current->children[current->size - 1] = NULL;
 
-        current->keys[0] = leftNode->keys[leftNode->numElements - 1];
-        leftNode->numElements--;
-        leftNode->children[leftNode->numElements] = current;
-        leftNode->children[leftNode->numElements + 1] = NULL;
+        current->keys[0] = leftNode->keys[leftNode->size - 1];
+        leftNode->size--;
+        leftNode->children[leftNode->size] = current;
+        leftNode->children[leftNode->size + 1] = NULL;
         parent->keys[left] = current->keys[0];
         return;
       }
     }
 
-    if (right <= parent->numElements) {
+    if (right <= parent->size) {
       Node *rightNode = parent->children[right];
-      if (rightNode->numElements >= (DEGREE + 1) / 2 + 1) {
-        current->numElements++;
-        current->children[current->numElements] =
-            current->children[current->numElements - 1];
-        current->children[current->numElements - 1] =
+      if (rightNode->size >= (DEGREE + 1) / 2 + 1) {
+        current->size++;
+        current->children[current->size] =
+            current->children[current->size - 1];
+        current->children[current->size - 1] =
             NULL;  // Maybe unnecessary
-        current->keys[current->numElements - 1] = rightNode->keys[0];
+        current->keys[current->size - 1] = rightNode->keys[0];
 
-        rightNode->numElements--;
-        rightNode->children[rightNode->numElements] =
-            rightNode->children[rightNode->numElements + 1];
-        rightNode->children[rightNode->numElements + 1] = NULL;
-        for (int i = 0; i < rightNode->numElements; i++) {
+        rightNode->size--;
+        rightNode->children[rightNode->size] =
+            rightNode->children[rightNode->size + 1];
+        rightNode->children[rightNode->size + 1] = NULL;
+        for (int i = 0; i < rightNode->size; i++) {
           rightNode->keys[i] = rightNode->keys[i + 1];
         }
 
@@ -316,29 +318,29 @@ void Btree::remove(int val) {
     if (left >= 0) {  // TODO: this needs better structure
                       // We want to merge two nodes
       Node *leftNode = parent->children[left];
-      for (int i = leftNode->numElements, j = 0; j < current->numElements;
+      for (int i = leftNode->size, j = 0; j < current->size;
            i++, j++) {
         leftNode->keys[i] = current->keys[j];
       }
-      leftNode->children[leftNode->numElements] = NULL;
-      leftNode->numElements += current->numElements;
-      leftNode->children[leftNode->numElements] =
-          current->children[current->numElements];
+      leftNode->children[leftNode->size] = NULL;
+      leftNode->size += current->size;
+      leftNode->children[leftNode->size] =
+          current->children[current->size];
       // TODO: remove internal
       delete[] current->keys;
       delete[] current->children;
       delete current;
 
-    } else if (right <= parent->numElements) {
+    } else if (right <= parent->size) {
       Node *rightNode = parent->children[right];
-      for (int i = current->numElements, j = 0; j < rightNode->numElements;
+      for (int i = current->size, j = 0; j < rightNode->size;
            i++, j++) {
         current->keys[i] = rightNode->keys[j];
       }
-      current->children[current->numElements] = NULL;
-      current->numElements += rightNode->numElements;
-      current->children[current->numElements] =
-          rightNode->children[rightNode->numElements];
+      current->children[current->size] = NULL;
+      current->size += rightNode->size;
+      current->children[current->size] =
+          rightNode->children[rightNode->size];
       // TODO remove internaln
       delete[] rightNode->keys;
       delete[] rightNode->children;
@@ -351,7 +353,7 @@ void Btree::removeInternal(int val, Node *current, Node *child) {
   // We need to remove internal nodes seperately since they have different
   // fullness requirements to leaf nodes
   if (current == root) {
-    if (current->numElements == 1) {
+    if (current->size == 1) {
       if (current->children[1] == child) {
         // change root node to left child
         delete[] child->keys;
@@ -380,29 +382,29 @@ void Btree::removeInternal(int val, Node *current, Node *child) {
   }
 
   int pos;
-  for (pos = 0; pos < current->numElements; pos++) {
+  for (pos = 0; pos < current->size; pos++) {
     if (current->keys[pos] == val) {
       break;
     }
   }
 
-  for (int i = pos; i < current->numElements; i++) {
+  for (int i = pos; i < current->size; i++) {
     current->keys[i] = current->keys[i + 1];
   }
 
-  for (pos = 0; pos < current->numElements; pos++) {
+  for (pos = 0; pos < current->size; pos++) {
     if (current->children[pos] == child) {
       break;
     }
   }
 
-  for (int i = pos; i < current->numElements + 1; i++) {
+  for (int i = pos; i < current->size + 1; i++) {
     current->children[i] = current->children[i + 1];
   }
 
-  current->numElements--;
+  current->size--;
 
-  if (current->numElements >= (DEGREE + 1) / 2 - 1) {
+  if (current->size >= (DEGREE + 1) / 2 - 1) {
     // We meet the fullness criteria
     return;
   }
@@ -414,7 +416,7 @@ void Btree::removeInternal(int val, Node *current, Node *child) {
   Node *parent = findParent(root, current);
   int left, right;
 
-  for (pos = 0; pos < parent->numElements + 1; pos++) {
+  for (pos = 0; pos < parent->size + 1; pos++) {
     if (parent->children[pos] == current) {
       left = pos - 1;
       right = pos + 1;
@@ -424,86 +426,86 @@ void Btree::removeInternal(int val, Node *current, Node *child) {
 
   if (left >= 0) {
     Node *leftNode = parent->children[left];
-    if (leftNode->numElements >= DEGREE + 1 / 2) {
-      for (int i = current->numElements; i > 0; i--) {
+    if (leftNode->size >= DEGREE + 1 / 2) {
+      for (int i = current->size; i > 0; i--) {
         current->keys[i] = current->keys[i - 1];
       }
 
       current->keys[0] = parent->keys[left];
-      parent->keys[left] = leftNode->keys[leftNode->numElements - 1];
-      for (int i = current->numElements + 1; i > 0; i--) {
+      parent->keys[left] = leftNode->keys[leftNode->size - 1];
+      for (int i = current->size + 1; i > 0; i--) {
         current->children[i] = current->children[i - 1];
       }
 
-      current->children[0] = leftNode->children[leftNode->numElements];
-      current->numElements++;
-      leftNode->numElements--;
+      current->children[0] = leftNode->children[leftNode->size];
+      current->size++;
+      leftNode->size--;
       return;
     }
   }
 
-  if (right <= parent->numElements) {
+  if (right <= parent->size) {
     Node *rightNode = parent->children[right];
-    if (rightNode->numElements >= DEGREE + 1 / 2) {
-      current->keys[current->numElements] = parent->keys[pos];
+    if (rightNode->size >= DEGREE + 1 / 2) {
+      current->keys[current->size] = parent->keys[pos];
       parent->keys[pos] = rightNode->keys[0];
 
-      for (int i = 0; i < rightNode->numElements; i++) {
+      for (int i = 0; i < rightNode->size; i++) {
         rightNode->keys[i] = rightNode->keys[i + 1];
       }
 
-      current->children[current->numElements + 1] = rightNode->children[0];
-      for (int i = 0; i < rightNode->numElements; ++i) {
+      current->children[current->size + 1] = rightNode->children[0];
+      for (int i = 0; i < rightNode->size; ++i) {
         rightNode->children[i] = rightNode->children[i + 1];
       }
 
-      current->numElements++;
-      rightNode->numElements--;
+      current->size++;
+      rightNode->size--;
       return;
     }
   }
 
   if (left >= 0) {
     Node *leftNode = parent->children[left];
-    leftNode->keys[leftNode->numElements] = parent->keys[left];
+    leftNode->keys[leftNode->size] = parent->keys[left];
 
-    for (int i = leftNode->numElements + 1, j = 0; j < current->numElements; j++) {
+    for (int i = leftNode->size + 1, j = 0; j < current->size; j++) {
       leftNode->keys[i] = current->keys[j];
     }
-    for (int i = leftNode->numElements + 1, j = 0; j < current->numElements; j++) {
+    for (int i = leftNode->size + 1, j = 0; j < current->size; j++) {
       leftNode->children[i] = current->children[j];
       current->children[j] = NULL;
     }
 
-    leftNode->numElements = current->numElements + 1;
-    current->numElements = 0;
+    leftNode->size = current->size + 1;
+    current->size = 0;
     removeInternal(parent->keys[left], parent, current);
-  } else if (right <= parent->numElements) {
+  } else if (right <= parent->size) {
     Node *rightNode = parent->children[right];
-    current->keys[current->numElements] = parent->keys[right - 1];
+    current->keys[current->size] = parent->keys[right - 1];
 
-    for (int i = current->numElements + 1, j = 0; j < rightNode->numElements; j++) {
+    for (int i = current->size + 1, j = 0; j < rightNode->size; j++) {
       current->keys[i] = rightNode->keys[j];
     }
-    for (int i = current->numElements + 1, j = 0; j < rightNode->numElements + 1; j++) {
+    for (int i = current->size + 1, j = 0; j < rightNode->size + 1; j++) {
       current->children[i] = rightNode->children[j];
       rightNode->children[j] = NULL;
     }
 
-    current->numElements = rightNode->numElements + 1;
-    rightNode->numElements = 0;
+    current->size = rightNode->size + 1;
+    rightNode->size = 0;
     removeInternal(parent->keys[right - 1], parent, rightNode);
   }
 }
 
 int Btree::getSize(Node *node) {
   int size = 0;
-  if (node == NULL || node->numElements == 0) {
+  if (node == NULL || node->size == 0) {
     return size;
   } else if (node->IS_LEAF) {
-    return size + node->numElements;
+    return size + node->size;
   } else {
-    for (int i = 0; i < node->numElements; i++) {
+    for (int i = 0; i < node->size; i++) {
       size += getSize(node->children[i]);
     }
     return size;
@@ -513,12 +515,12 @@ int Btree::getSize(Node *node) {
 
 void Btree::printTree(Node *node) {
   if (node != NULL) {
-    for (int i = 0; i < node->numElements; i++) {
+    for (int i = 0; i < node->size; i++) {
       cout << node->keys[i] << " ";
     }
     cout << "\n";
     if (node->IS_LEAF != true) {
-      for (int i = 0; i < node->numElements + 1; i++) {
+      for (int i = 0; i < node->size + 1; i++) {
         printTree(node->children[i]);
       }
     }
